@@ -1,0 +1,19 @@
+{
+  "name": "sql",
+  "version": "1.0.0",
+  "description": "folder to hold SQL syntax",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --runInBand --verbose",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "SQL",
+    "mySql"
+  ],
+  "author": "Samuel Maina",
+  "license": "MIT",
+  "dependencies": {
+    "mysql": "^2.18.1"
+  }
+}
