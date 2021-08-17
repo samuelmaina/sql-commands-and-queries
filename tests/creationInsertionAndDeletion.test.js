@@ -1,37 +1,17 @@
-const sql = require('mysql');
+const {
+	ensureArrayContains,
+	ensureArrayHasObjectWithKeyValuePair,
+} = require('./testUtils');
+const utils = require('./utils');
+const { globalCb, cbWithDone } = utils;
 
 const MAX_TESTING_TIME = 10000;
 
-/**
- * put your database creditials in the different fields.Also make sure the database is also running.
- */
-
-const host = 'localhost';
-const user = 'root';
-const password = '';
-
-const database = 'people';
-
-const globalCb = err => {
-	if (err) throw new Error(err);
-};
-
-describe('starting tests', () => {
+describe.skip('starting tests', () => {
 	let connection;
 	beforeAll(done => {
-		const cb = err => {
-			if (err) throw new Error(err);
-			done();
-		};
-		const con = sql.createConnection({
-			host,
-			user,
-			password,
-			database,
-		});
-
-		con.connect(cb);
-		connection = con;
+		connection = utils.createConnectionWithDone(done);
+		console.log(connection);
 	});
 	afterAll(done => {
 		connection.end();
@@ -52,8 +32,7 @@ describe('starting tests', () => {
             PRIMARY KEY (dept_name,faculty)
         )`;
 			connection.query(create, globalCb);
-			dropTable(name, globalCb);
-			done();
+			deleteTableWithDone(name, done);
 		},
 		MAX_TESTING_TIME
 	);
@@ -71,12 +50,7 @@ describe('starting tests', () => {
 			};
 
 			createTable(table, globalCb);
-
-			cb = err => {
-				if (err) throw new Error(err);
-				done();
-			};
-			connection.query(`DROP TABLE ${table.name}`, cb);
+			deleteTableWithDone(table.name, done);
 		},
 		MAX_TESTING_TIME
 	);
@@ -91,34 +65,36 @@ describe('starting tests', () => {
             PRIMARY KEY (dept_name,faculty)`,
 		};
 		beforeEach(done => {
-			const cb = err => {
-				if (err) throw new Error(err);
-				done();
-			};
-
-			createTable(table, cb);
+			createTableWithDone(table, done);
 		});
-		afterEach(done => {
-			const cb = err => {
-				if (err) throw new Error(err);
-				done();
-			};
-			dropTable(table.name, cb);
+		afterEach(async () => {
+			await utils.clearDbAsync(connection);
 		});
-		it('adding attributes', done => {
-			const cb = err => {
-				if (err) throw new Error(err);
-				done();
-			};
-			connection.query(`ALTER TABLE ${table.name} ADD vision VARCHAR(50)`, cb);
-		});
+		it(
+			'adding attributes',
+			done => {
+				const cb = async err => {
+					if (err) throw new Error(err);
+					const attributes = await utils.returnAttributesAsync(
+						connection,
+						table.name
+					);
+					ensureArrayHasObjectWithKeyValuePair(attributes, 'Field', 'vision');
+					done();
+				};
+				connection.query(
+					`ALTER TABLE ${table.name} ADD vision VARCHAR(50)`,
+					cb
+				);
+			},
+			MAX_TESTING_TIME
+		);
 		it('removing attributes', done => {
 			const field = 'num_of_employees';
-			const cb = err => {
-				if (err) throw new Error(err);
-				done();
-			};
-			connection.query(`ALTER TABLE ${table.name} DROP ${field}  `, cb);
+			connection.query(
+				`ALTER TABLE ${table.name} DROP ${field}  `,
+				cbWithDone(done)
+			);
 		});
 	});
 
@@ -131,18 +107,10 @@ describe('starting tests', () => {
                         PRIMARY KEY(dept_name)`,
 		};
 		beforeEach(done => {
-			const cb = err => {
-				if (err) throw new Error(err);
-				done();
-			};
-			createTable(table, cb);
+			createTableWithDone(table, done);
 		});
 		afterEach(done => {
-			const cb = err => {
-				if (err) throw new Error(err);
-				done();
-			};
-			dropTable(table.name, cb);
+			deleteTableWithDone(table.name, done);
 		});
 		it(
 			'inserting data in bulk',
@@ -197,11 +165,7 @@ describe('starting tests', () => {
 			done();
 		});
 		afterEach(done => {
-			const cb = err => {
-				if (err) throw new Error(err);
-				done();
-			};
-			dropTable(table.name, cb);
+			deleteTableWithDone(table.name, done);
 		});
 		it(
 			'delete data for one field',
@@ -226,12 +190,17 @@ describe('starting tests', () => {
 		);
 	});
 
-	const createTable = (config, cb) => {
-		const { name, schema } = config;
-		const create = `CREATE TABLE ${name}(${schema})`;
-		connection.query(create, cb);
-	};
-	const dropTable = (name, cb) => {
-		connection.query(`DROP TABLE ${name}`, cb);
-	};
+	function createTableWithDone(table, done) {
+		utils.createTableWithDone(connection, table, done);
+	}
+	function deleteTableWithDone(name, done) {
+		utils.deleteTableWithDone(connection, name, done);
+	}
+
+	function createTable(conf, cb) {
+		utils.createTable(connection, conf, cb);
+	}
+	function dropTable(tableName, cb) {
+		utils.dropTable(connection, tableName, cb);
+	}
 });
