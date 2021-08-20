@@ -11,6 +11,17 @@ const { ensureEqual } = require("./testUtils");
 
 const MAX_TESTING_TIME = 100000;
 
+function createConnectionToDb(cb) {
+  const con = sql.createConnection({
+    host: dbConfig.host,
+    user: credentials.user,
+    password: credentials.password,
+    insecureAuth: true,
+  });
+  con.connect(cb);
+  return con;
+}
+
 exports.includeSetUpAndTeardown = (connection) => {
   beforeAll(async () => {
     await this.createTablesAndLoadThemWithData(connection);
@@ -31,6 +42,9 @@ exports.createTablesAndLoadThemWithData = async (
   connection,
   tablesToCreate = []
 ) => {
+  //the database is delted by dropping it hence there is need to create a
+  //new database when there is need to write data into tables.
+  await this.createDbAndUseIt(connection);
   const schemas = Object.values(university);
   //if second param is not provided create and fill all tables present.
   if (tablesToCreate.length < 1) {
@@ -41,7 +55,6 @@ exports.createTablesAndLoadThemWithData = async (
     }
     for (const schema of schemas) {
       await this.loadDataIntoTable(connection, schema.name);
-      console.log("finished entering data for the table " + schema.name);
     }
   } else {
     //same case as before, create the tables at first.
@@ -54,6 +67,20 @@ exports.createTablesAndLoadThemWithData = async (
       await this.loadDataIntoTable(connection, schema.name);
     }
   }
+};
+
+exports.createDbAndUseIt = async (con) => {
+  const db = dbConfig.database;
+  return new Promise((resolve, reject) => {
+    function cb(err, result) {
+      if (err) return reject(err);
+      resolve(result);
+    }
+    con.query(`CREATE DATABASE ${db}`, (err, result) => {
+      if (err) return reject(err);
+      con.query(`USE ${db}`, cb);
+    });
+  });
 };
 
 exports.loadDataIntoTable = async (connection, tableName) => {
@@ -112,24 +139,6 @@ exports.createConnectionAsync = async () => {
     }
   });
 };
-
-function createConnectionToDb(cb) {
-  const con = sql.createConnection({
-    host: dbConfig.host,
-    user: credentials.user,
-    password: credentials.password,
-    insecureAuth: true,
-  });
-  const errCb = (err) => {
-    if (err) throw new Error(err);
-  };
-
-  const db = dbConfig.database;
-  con.connect(errCb);
-  con.query(`CREATE DATABASE ${db}`, errCb);
-  con.query(`USE ${db}`, cb);
-  return con;
-}
 
 exports.createConnectionWithDone = (done) => {
   const cb = (err) => {
