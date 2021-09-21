@@ -722,7 +722,7 @@ describe("Intermediate SQL queries", () => {
     });
     describe("Views", () => {
       //views are created using the syntax create view v as <query expression>;
-      it.only(
+      it(
         "usage",
         async () => {
           const view_creater = `create view faculty as
@@ -761,6 +761,102 @@ describe("Intermediate SQL queries", () => {
           ];
 
           ensureDeeplyEqual(resultAsArray, expected);
+        },
+        MAX_TESTING_TIME_IN_MS
+      );
+      //views can appear anywhere in a query where a  relation can appear.
+      it(
+        "defination of the output parameters on the view defination",
+        async () => {
+          //the values of the sum(salary) is not explicitly stated in the query but it can
+          //be specified in the defination of the view.
+          const view_creater = `create view departments_total_salary(dept_name, total_salary) as
+                                  select dept_name, sum (salary)
+                                  from instructor
+                                  group by dept_name;`;
+          await utils.runNonParametricQueryAsync(connection, view_creater);
+
+          const select = `select *
+                          from departments_total_salary`;
+          const result = await utils.runNonParametricQueryAsync(
+            connection,
+            select
+          );
+
+          const resultAsArray = result.map((tuple) => {
+            const { dept_name, total_salary } = tuple;
+            return [dept_name, total_salary];
+          });
+
+          const expected = [
+            ["Biology", 72000],
+            ["Comp. Sci.", 232000],
+            ["Elec. Eng.", 80000],
+            ["Finance", 170000],
+            ["History", 122000],
+            ["Music", 40000],
+            ["Physics", 182000],
+          ];
+
+          ensureDeeplyEqual(resultAsArray, expected);
+        },
+        MAX_TESTING_TIME_IN_MS
+      );
+
+      //views can be nested in each other to create more complicated views.
+      it.only(
+        "nesting of views",
+        async () => {
+          const physics_fall_2017 = ` create view physics_fall_2017(course_id, room_number,building) as
+                                          select course.course_id, room_number, section.building
+                                          from course, section
+                                          where course.course_id = section.course_id
+                                            and course.dept_name = 'Physics'
+                                            and section.semester = 'Fall'
+                                            and section.year = 2017;  `;
+          await utils.runNonParametricQueryAsync(connection, physics_fall_2017);
+
+          const physics_fall_2017_watson = `create view physics_fall_2017_watson as
+                                              select course_id, room_number,building
+                                              from physics_fall_2017
+                                              where building = 'Watson';`;
+          await utils.runNonParametricQueryAsync(
+            connection,
+            physics_fall_2017_watson
+          );
+
+          const select = `select *
+                          from physics_fall_2017_watson`;
+          const result = await utils.runNonParametricQueryAsync(
+            connection,
+            select
+          );
+
+          const resultAsArray = result.map((tuple) => {
+            const { course_id, room_number } = tuple;
+            return [course_id, room_number];
+          });
+          const expected = [["PHY-101", "100"]];
+
+          ensureDeeplyEqual(resultAsArray, expected);
+
+          //views can have their results stored in a database for faster querying. This
+          //types of views are called materialized views. Materialized views can be updated
+          //lazily(when the view is called ) or they can be updated periodically( after sometime.).
+          //the method of updation of the materialized view is specified by the database system under
+          //implementation.
+          //Updates can be done to the database through views but the practise is generally discouraged since view
+          //are mostly defined from many relations . Also views may not display all the data from a table hence
+          //insertion would fail or padding with nulls for the unpresented attributes.
+          //An SQL view is said to be updatable(i.e., inserts, updates, or deletes can
+          //be applied on the view)
+          //if it only has
+          // 1. one relation in its from clause.
+          // 2. The select clause contains only attribute names of the relation and does not have
+          // any expressions, aggregates, or distinct specification.
+          // 3. Any attribute not listed in the select clause can be set to null; that is, it does not
+          // have a not null constraint and is not part of a primary key.
+          // 4. The query does not have a group by or having clause.
         },
         MAX_TESTING_TIME_IN_MS
       );
