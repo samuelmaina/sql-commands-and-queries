@@ -457,43 +457,42 @@ describe("Intermediate SQL queries", () => {
         it(
           "usage",
           async () => {
-            const select = `select student.name,student.ID
-                            from student natural left outer join takes;`;
+            const select = `select *
+                            from student natural left outer join takes
+                            where student.name= 'Snow' `;
             const result = await utils.runNonParametricQueryAsync(
               connection,
               select
             );
 
             const resultAsArray = result.map((tuple) => {
-              const { ID, name } = tuple;
-              return [ID, name];
+              const {
+                ID,
+                name,
+                dept_name,
+                tot_cred,
+                course_id,
+                sec_id,
+                semester,
+                year,
+                grade,
+              } = tuple;
+              return [
+                ID,
+                name,
+                dept_name,
+                tot_cred,
+                course_id,
+                sec_id,
+                semester,
+                year,
+                grade,
+              ];
             });
 
             // Snow is shown though he has not taken any course.
             const expected = [
-              ["00128", "Zhang"],
-              ["00128", "Zhang"],
-              ["12345", "Shankar"],
-              ["12345", "Shankar"],
-              ["12345", "Shankar"],
-              ["12345", "Shankar"],
-              ["19991", "Brandt"],
-              ["23121", "Chavez"],
-              ["44553", "Peltier"],
-              ["45678", "Levy"],
-              ["45678", "Levy"],
-              ["45678", "Levy"],
-              ["54321", "Williams"],
-              ["54321", "Williams"],
-              ["55739", "Sanchez"],
-              ["70557", "Snow"],
-              ["76543", "Brown"],
-              ["76543", "Brown"],
-              ["76653", "Aoi"],
-              ["98765", "Bourikas"],
-              ["98765", "Bourikas"],
-              ["98988", "Tanaka"],
-              ["98988", "Tanaka"],
+              ["70557", "Snow", "Physics", 0, null, null, null, null, null],
             ];
             ensureDeeplyEqual(resultAsArray, expected);
           },
@@ -529,9 +528,11 @@ describe("Intermediate SQL queries", () => {
         //   of) the right outer join operation.
         //the atributes in the left relation are filled with nulls in the resultant relation
 
-        it.only(
+        it(
           "usage",
           async () => {
+            //student Snow has not taken any course hence he should be present in the right join operation
+            //
             const select = `select *
                              from takes natural right outer join student as right_join
                              where right_join.name="Snow"`;
@@ -565,252 +566,10 @@ describe("Intermediate SQL queries", () => {
               ];
             });
 
-            console.log(resultAsArray);
-
+            //snow is displayed but the right value for the left relation attributes
+            //are filled with nulls.
             const expected = [
-              [
-                "00128",
-                "Zhang",
-                "Comp. Sci.",
-                102,
-                "CS-101",
-                "1",
-                "Fall",
-                2017,
-                "A",
-              ],
-              [
-                "00128",
-                "Zhang",
-                "Comp. Sci.",
-                102,
-                "CS-347",
-                "1",
-                "Fall",
-                2017,
-                "A-",
-              ],
-              [
-                "12345",
-                "Shankar",
-                "Comp. Sci.",
-                32,
-                "CS-101",
-                "1",
-                "Fall",
-                2017,
-                "C",
-              ],
-              [
-                "12345",
-                "Shankar",
-                "Comp. Sci.",
-                32,
-                "CS-190",
-                "2",
-                "Spring",
-                2017,
-                "A",
-              ],
-              [
-                "12345",
-                "Shankar",
-                "Comp. Sci.",
-                32,
-                "CS-315",
-                "1",
-                "Spring",
-                2018,
-                "A",
-              ],
-              [
-                "12345",
-                "Shankar",
-                "Comp. Sci.",
-                32,
-                "CS-347",
-                "1",
-                "Fall",
-                2017,
-                "A",
-              ],
-              [
-                "19991",
-                "Brandt",
-                "History",
-                80,
-                "HIS-351",
-                "1",
-                "Spring",
-                2018,
-                "B",
-              ],
-              [
-                "23121",
-                "Chavez",
-                "Finance",
-                110,
-                "FIN-201",
-                "1",
-                "Spring",
-                2018,
-                "C+",
-              ],
-              [
-                "44553",
-                "Peltier",
-                "Physics",
-                56,
-                "PHY-101",
-                "1",
-                "Fall",
-                2017,
-                "B-",
-              ],
-              [
-                "45678",
-                "Levy",
-                "Physics",
-                46,
-                "CS-101",
-                "1",
-                "Fall",
-                2017,
-                "F",
-              ],
-              [
-                "45678",
-                "Levy",
-                "Physics",
-                46,
-                "CS-101",
-                "1",
-                "Spring",
-                2018,
-                "B+",
-              ],
-              [
-                "45678",
-                "Levy",
-                "Physics",
-                46,
-                "CS-319",
-                "1",
-                "Spring",
-                2018,
-                "B",
-              ],
-              [
-                "54321",
-                "Williams",
-                "Comp. Sci.",
-                54,
-                "CS-101",
-                "1",
-                "Fall",
-                2017,
-                "A-",
-              ],
-              [
-                "54321",
-                "Williams",
-                "Comp. Sci.",
-                54,
-                "CS-190",
-                "2",
-                "Spring",
-                2017,
-                "B+",
-              ],
-              [
-                "55739",
-                "Sanchez",
-                "Music",
-                38,
-                "MU-199",
-                "1",
-                "Spring",
-                2018,
-                "A-",
-              ],
               ["70557", "Snow", "Physics", 0, null, null, null, null, null],
-              [
-                "76543",
-                "Brown",
-                "Comp. Sci.",
-                58,
-                "CS-101",
-                "1",
-                "Fall",
-                2017,
-                "A",
-              ],
-              [
-                "76543",
-                "Brown",
-                "Comp. Sci.",
-                58,
-                "CS-319",
-                "2",
-                "Spring",
-                2018,
-                "A",
-              ],
-              [
-                "76653",
-                "Aoi",
-                "Elec. Eng.",
-                60,
-                "EE-181",
-                "1",
-                "Spring",
-                2017,
-                "C",
-              ],
-              [
-                "98765",
-                "Bourikas",
-                "Elec. Eng.",
-                98,
-                "CS-101",
-                "1",
-                "Fall",
-                2017,
-                "C-",
-              ],
-              [
-                "98765",
-                "Bourikas",
-                "Elec. Eng.",
-                98,
-                "CS-315",
-                "1",
-                "Spring",
-                2018,
-                "B",
-              ],
-              [
-                "98988",
-                "Tanaka",
-                "Biology",
-                120,
-                "BIO-101",
-                "1",
-                "Summer",
-                2017,
-                "A",
-              ],
-              [
-                "98988",
-                "Tanaka",
-                "Biology",
-                120,
-                "BIO-301",
-                "1",
-                "Summer",
-                2018,
-                null,
-              ],
             ];
 
             ensureDeeplyEqual(resultAsArray, expected);
@@ -841,6 +600,170 @@ describe("Intermediate SQL queries", () => {
           MAX_TESTING_TIME_IN_MS
         );
       });
+      describe("full outer join", () => {
+        //performs both right  and left outer join operations.
+        //not supported by mySQL hence the query will throw an error.
+
+        //equivalent for mySQL
+        // SELECT * FROM t1
+        // LEFT JOIN t2 ON t1.id = t2.id
+        // UNION ALL
+        // SELECT * FROM t1
+        // RIGHT JOIN t2 ON t1.id = t2.id
+        // WHERE t1.id IS NULL
+        it.skip(
+          "usage",
+          async () => {
+            // “Display
+            // a list of all students in the Comp. Sci. department, along with the course sections, if
+            // any, that they have taken in Spring 2017; all course sections from Spring 2017 must
+            //be displayed, even if no student from the Comp. Sci. department has taken the course
+            // section.”
+            const select = `select *
+                              from (select *
+                                    from student
+                                    where dept_name = 'Comp. Sci.') as comp_sci
+                                   natural full outer join
+                                    (select *
+                                    from takes
+                                    where semester = 'Spring' and year = 2017) as period;`;
+            const result = await utils.runNonParametricQueryAsync(
+              connection,
+              select
+            );
+
+            const resultAsArray = result.map((tuple) => {
+              const {
+                ID,
+                name,
+                dept_name,
+                tot_cred,
+                course_id,
+                sec_id,
+                semester,
+                year,
+                grade,
+              } = tuple;
+              return [
+                ID,
+                name,
+                dept_name,
+                tot_cred,
+                course_id,
+                sec_id,
+                semester,
+                year,
+                grade,
+              ];
+            });
+
+            //snow is displayed but the right value for the left relation attributes
+            //are filled with nulls.
+            const expected = [
+              ["70557", "Snow", "Physics", 0, null, null, null, null, null],
+            ];
+
+            ensureDeeplyEqual(resultAsArray, expected);
+          },
+          MAX_TESTING_TIME_IN_MS
+        );
+      });
+      describe("Use of ON and WHERE in the outer join operations.", () => {
+        //It is used to do a comparison when doing the outer join.
+        //It is different from the where clause since the conditions is
+        //checked when the cartesian product is being done whereas as WHERE is performed
+        //after the performance of the cartesian product.
+        it(
+          "ON usage",
+          async () => {
+            const select = `select *
+                            from student left outer join takes on  student.name='Snow';`;
+            const result = await utils.runNonParametricQueryAsync(
+              connection,
+              select
+            );
+
+            const resultAsArray = result.map((tuple) => {
+              const {
+                ID,
+                name,
+                dept_name,
+                tot_cred,
+                course_id,
+                sec_id,
+                semester,
+                year,
+                grade,
+              } = tuple;
+              return [
+                ID,
+                name,
+                dept_name,
+                tot_cred,
+                course_id,
+                sec_id,
+                semester,
+                year,
+                grade,
+              ];
+            });
+
+            //snow is displayed but the right value for the left relation attributes
+            //are filled with nulls.
+            const expected = [
+              ["70557", "Snow", "Physics", 0, null, null, null, null, null],
+            ];
+
+            ensureDeeplyEqual(resultAsArray, expected);
+          },
+          MAX_TESTING_TIME_IN_MS
+        );
+      });
+    });
+    describe("Views", () => {
+      //views are created using the syntax create view v as <query expression>;
+      it.only(
+        "usage",
+        async () => {
+          const view_creater = `create view faculty as
+                          select ID, name, dept_name
+                          from instructor;`;
+          await utils.runNonParametricQueryAsync(connection, view_creater);
+
+          //the view is created and it can be called at any time.
+          //a view is different from a WITH clause in that the WITH
+          //clause can only be accessed in the query that it has been
+          //created.
+          const select = `select *
+                          from faculty`;
+          const result = await utils.runNonParametricQueryAsync(
+            connection,
+            select
+          );
+
+          const resultAsArray = result.map((tuple) => {
+            const { ID, name, dept_name } = tuple;
+            return [ID, name, dept_name];
+          });
+          const expected = [
+            ["10101", "Srinivasan", "Comp. Sci."],
+            ["12121", "Wu", "Finance"],
+            ["15151", "Mozart", "Music"],
+            ["22222", "Einstein", "Physics"],
+            ["32343", "El Said", "History"],
+            ["33456", "Gold", "Physics"],
+            ["45565", "Katz", "Comp. Sci."],
+            ["58583", "Califieri", "History"],
+            ["76543", "Singh", "Finance"],
+            ["76766", "Crick", "Biology"],
+            ["83821", "Brandt", "Comp. Sci."],
+            ["98345", "Kim", "Elec. Eng."],
+          ];
+
+          ensureDeeplyEqual(resultAsArray, expected);
+        },
+        MAX_TESTING_TIME_IN_MS
+      );
     });
   });
 });
