@@ -11,4 +11,4 @@ The SQL queries are coded inside test functions that why there is only tests fol
 - Validation and integrity constains.
 - Relationships
 - Views(lazy and materialized)
-- Commands such as granting of privileges and Database performance analytics analytics.
+- Commands such as granting of privileges and Database performance analytics.
