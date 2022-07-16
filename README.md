@@ -9,6 +9,7 @@ The SQL queries are coded inside test functions that why there is only tests fol
 - Aggregation and Grouping.
 - Set operations(union, intersection, etc).
 - Validation and integrity constains.
+- Join operations
 - Relationships
 - Views(lazy and materialized)
 - Commands such as granting of privileges and Database performance analytics.
