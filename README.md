@@ -1,7 +1,7 @@
 # SQL
 A repo for SQL queries and commands are based on the book [Database Systems Concepts](https://www.db-book.com "Database Systems Concepts").
 Queries and commands done in TDD in  node.js.
-The tests are used to automatically load data for different conditions and validate the SQL outcomes  which is faster than manual filling.
+The tests are used to automatically load data for different conditions, validate the SQL outcomes and clear the database. This is faster than manually filling the database and deleting the content.
 The SQL queries are coded inside test functions that why there is only tests folder as the main folder.
 ## concepts covered include:
 - Basic and intermediate CRUD operations.
