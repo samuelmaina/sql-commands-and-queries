@@ -42,8 +42,8 @@ exports.createTablesAndLoadThemWithData = async (
   connection,
   tablesToCreate = []
 ) => {
-  //the database is delted by dropping it hence there is need to create a
-  //new database when there is need to write data into tables.
+  //data is erased after a test by dropping a database.
+  //the database need to created again when creating another test data.
   await this.createDbAndUseIt(connection);
   const schemas = Object.values(university);
   //if second param is not provided create and fill all tables present.

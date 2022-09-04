@@ -7,7 +7,7 @@ const { createConnectionAsync, createTableAsync } = utils;
 const MAX_SETUP_TIME_IN_MS = 100000;
 const MAX_TESTING_TIME_IN_MS = 30000;
 
-describe("Operation on populated relations", () => {
+describe.skip("Operation on populated relations", () => {
   let connection;
 
   beforeAll(async () => {
@@ -368,16 +368,16 @@ describe("Operation on populated relations", () => {
           // greater than the average of the total salary of all departments
           async () => {
             const select = `
-			with dept_total (dept_name, value) as
-					(select dept_name, sum(salary)
-					from instructor
-					group by dept_name),
-			dept_total_avg(value) as
-					(select avg(value)
-					from dept_total)
-			select dept_name
-			from dept_total, dept_total_avg
-			where dept_total.value > dept_total_avg.value;`;
+                  with dept_total (dept_name, value) as
+                      (select dept_name, sum(salary)
+                      from instructor
+                      group by dept_name),
+                  dept_total_avg(value) as
+                      (select avg(value)
+                      from dept_total)
+                  select dept_name
+                  from dept_total, dept_total_avg
+                  where dept_total.value > dept_total_avg.value;`;
             const result = await utils.runNonParametricQueryAsync(
               connection,
               select
@@ -814,7 +814,7 @@ describe("Operation on populated relations", () => {
         },
         MAX_TESTING_TIME_IN_MS
       );
-      it(
+      it.only(
         "more complex usage",
         async () => {
           await utils.createTablesAndLoadThemWithData(connection, [
@@ -825,12 +825,12 @@ describe("Operation on populated relations", () => {
           //increase salaries of instructors by
           //5% for those who earn less  the average salary of all instructors.
           const update = `   
-                            with avg_salary(value) as (select avg (salary)
-                                                         from instructor)
-                            update instructor
-                            set salary = salary * 1.05
-                            where salary < (select value
-                                            from avg_salary);`;
+                    update instructor i cross join
+                    (select avg(i2.salary) as avg_salary
+                    from instructor i2
+                    ) i2
+                set i.salary = i.salary * 1.05
+                where i.salary < i2.avg_salary;`;
           await utils.runNonParametricQueryAsync(connection, update);
 
           const retrieved = "SELECT * FROM instructor";
@@ -937,7 +937,7 @@ describe("Operation on populated relations", () => {
           MAX_TESTING_TIME_IN_MS
         );
       });
-      it.only("updation using a scalar", async () => {
+      it("updation using a scalar", async () => {
         await utils.createTablesAndLoadThemWithData(connection);
 
         //calculate the total credit that a student
@@ -971,7 +971,7 @@ describe("Operation on populated relations", () => {
 
         //Snow received a zero since only takes only one course,
         //and in that course, he has a null value. This was enabled by the
-        //use of case which does away with null values.
+        //use of case  clause to do away with null values.
 
         const expected = [
           ["00128", "Zhang", "Comp. Sci.", 7],

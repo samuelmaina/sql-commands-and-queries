@@ -102,9 +102,14 @@ describe.skip("Basic operations of sql", () => {
 
     describe("select combining tables and filtering return results", () => {
       it("the behaviour of the from clause", async () => {
-        //the from clause creates
+        //the from clause creates a catersian product of the two relation. The
+        //producted relation as the same cardinality as the product of cardinalities
+        //of the individual relations.
+
         const select = `SELECT *
 								FROM instructor, department;`;
+
+        //can be expressed as 'FROM instructor CROSS JOIN department'
         const result = await utils.runNonParametricQueryAsync(
           connection,
           select

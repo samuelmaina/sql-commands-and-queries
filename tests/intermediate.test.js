@@ -7,7 +7,7 @@ const { createConnectionAsync, createTableAsync } = utils;
 const MAX_SETUP_TIME_IN_MS = 100000;
 const MAX_TESTING_TIME_IN_MS = 30000;
 
-describe("Intermediate SQL queries", () => {
+describe.skip("Intermediate SQL queries", () => {
   let connection;
 
   beforeAll(async () => {
@@ -27,7 +27,7 @@ describe("Intermediate SQL queries", () => {
       await utils.clearDbAsync(connection);
     }, MAX_SETUP_TIME_IN_MS);
 
-    describe.skip("Natural Join", () => {
+    describe("Natural Join", () => {
       //it will perform a catesian product of the two relations  and only
       //take those tuples with the same fields for all the common  columns
       //for all the relations in the join operation.
@@ -802,35 +802,30 @@ describe("Intermediate SQL queries", () => {
         },
         MAX_TESTING_TIME_IN_MS
       );
+    });
 
-      //views can be nested in each other to create more complicated views.
-      it.only(
-        "nesting of views",
+    //A transaction is a sequence of query and update statements.
+    //A transaction must end with either a rollback(causes the current transaction to be rolled back; that is, it undoes
+    // all the updates performed by the SQL statements in the transaction. Thus, the
+    // database state is restored to what it was before the first statement of the transaction
+    // was executed.) or a commit(the updation are made permanent to the database.)
+    //transactions are atomic.
+    // Either all the effects of the transaction are reflected in the database or
+    // none are (after rollback).
+    describe("Transactions", () => {
+      it(
+        "usage",
         async () => {
-          const physics_fall_2017 = ` create view physics_fall_2017(course_id, room_number,building) as
-                                          select course.course_id, room_number, section.building
-                                          from course, section
-                                          where course.course_id = section.course_id
-                                            and course.dept_name = 'Physics'
-                                            and section.semester = 'Fall'
-                                            and section.year = 2017;  `;
-          await utils.runNonParametricQueryAsync(connection, physics_fall_2017);
-
-          const physics_fall_2017_watson = `create view physics_fall_2017_watson as
-                                              select course_id, room_number,building
-                                              from physics_fall_2017
-                                              where building = 'Watson';`;
-          await utils.runNonParametricQueryAsync(
-            connection,
-            physics_fall_2017_watson
-          );
-
-          const select = `select *
-                          from physics_fall_2017_watson`;
+          const transaction = ` begin atomic
+                                        select course_id
+                                        from course
+                                      end.  `;
           const result = await utils.runNonParametricQueryAsync(
             connection,
-            select
+            transaction
           );
+
+          console.log(result);
 
           const resultAsArray = result.map((tuple) => {
             const { course_id, room_number } = tuple;
@@ -860,6 +855,97 @@ describe("Intermediate SQL queries", () => {
         },
         MAX_TESTING_TIME_IN_MS
       );
+    });
+
+    describe("Constrains", () => {
+      //these are constraints that are attributes.
+      //1. NOT NULL specifies that the field can't not contain a null value. null can fit into any field of
+      //   an SQL attribute.
+      //2. UNIQUE (a1, a2, a3,..., aN) specifies that the attributes (a1, a2, a3,..., aN) form a superkey i.e
+      //   no two tuples can be equal in all of the specified attributes. the attributes can be null.
+      //3. CHECKS(P) ensures that the predicated P is satisfied. e.g. check (semester in ('Fall', 'Winter', 'Spring', 'Summer'))
+      // constrains can also be assigned names such as salary numeric(8,2), constraint MINSALARY check (salary > 29000), in which
+      //the constain can be dropped in  by the sql query alter table instructor drop constraint minsalary;
+
+      //ASSERTION  creates  predicate that the database must always satisfy.
+      it(
+        "use of ASSERTION keyword for verification of complex checks",
+        async () => {
+          //takes the format of create assertion <assertion-name> check <predicate>;
+          const transaction = ` create assertion credits_earned_constraint check
+                                      (not exists (select ID
+                                      from student
+                                      where tot_cred <> (select coalesce(sum(credits), 0)
+                                          from takes natural join course
+                                          where student.ID= takes.ID
+                                          and grade is not null and grade<> ’F’ ))) `;
+          const result = await utils.runNonParametricQueryAsync(
+            connection,
+            transaction
+          );
+
+          console.log(result);
+
+          const resultAsArray = result.map((tuple) => {
+            const { course_id, room_number } = tuple;
+            return [course_id, room_number];
+          });
+          const expected = [["PHY-101", "100"]];
+
+          ensureDeeplyEqual(resultAsArray, expected);
+
+          //views can have their results stored in a database for faster querying. This
+          //types of views are called materialized views. Materialized views can be updated
+          //lazily(when the view is called ) or they can be updated periodically( after sometime.).
+          //the method of updation of the materialized view is specified by the database system under
+          //implementation.
+          //Updates can be done to the database through views but the practise is generally discouraged since view
+          //are mostly defined from many relations . Also views may not display all the data from a table hence
+          //insertion would fail or padding with nulls for the unpresented attributes.
+          //An SQL view is said to be updatable(i.e., inserts, updates, or deletes can
+          //be applied on the view)
+          //if it only has
+          // 1. one relation in its from clause.
+          // 2. The select clause contains only attribute names of the relation and does not have
+          // any expressions, aggregates, or distinct specification.
+          // 3. Any attribute not listed in the select clause can be set to null; that is, it does not
+          // have a not null constraint and is not part of a primary key.
+          // 4. The query does not have a group by or having clause.
+        },
+        MAX_TESTING_TIME_IN_MS
+      );
+    });
+
+    //Indices are very effecient in querying of the database, enforcing integrities such as those
+    //of primary keys, foreign keys and querying of data.
+    it(
+      "creating of index in SQL",
+      async () => {
+        //takes the format of create index <index-name> on <relation-name> (<attribute-list>);
+        //todos: Find a way to get the present indices in the database and confirm that the below index is
+        //created.
+        //For now the passing of the test is that it does not throw.
+        const index = `create index dept_name_index on instructor (dept_name) `;
+        await utils.runNonParametricQueryAsync(connection, index);
+      },
+      MAX_TESTING_TIME_IN_MS
+    );
+
+    //this involved granting preveleges to perform the CRUD operations in the databaase.
+    //there are also other forms of priveleges that a person can be granted such as viewing of schema,
+    //adding or dropping of database schemas , and creating or dropping schemas.
+    describe("Authorization", () => {
+      //this is giving preveleges to the database uses to perform some or all of the CRUD operation.
+      describe("grant", () => {
+        it.only(
+          "usage",
+          async () => {
+            const index = `grant select on department to Sam; `;
+            await utils.runNonParametricQueryAsync(connection, index);
+          },
+          MAX_TESTING_TIME_IN_MS
+        );
+      });
     });
   });
 });
