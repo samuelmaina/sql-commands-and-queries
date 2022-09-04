@@ -7,9 +7,9 @@ The SQL queries are coded inside test functions that why there is only tests fol
 - Basic and intermediate CRUD operations.
 - Complex querying such as query nesting and query reuse.
 - Aggregation and Grouping.
-- Set operations(union, intersection, etc).
+- Set operations(UNION, INTERSECTION etc) and boolean operations(OR, AND and BETWEEN etc).
 - Validation and integrity constains.
-- Join operations
-- Relationships
-- Views(lazy and materialized)
-- Commands such as granting of privileges and Database performance analytics.
+- Join operations (LEFT, RIGHT,NATURAL and INNER)
+- Relationships.
+- SQL functions and procedures.
+
